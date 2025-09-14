@@ -156,8 +156,10 @@ export default function App() {
   async function processImage() {
     if (!currentImage) return
 
+    // 移動位置リセット
     setCanvasPosition({ x: 0, y: 0 })
     setInitialPosition({ x: 0, y: 0 })
+
     setProcessing(true)
 
     setTimeout(() => {
@@ -186,13 +188,11 @@ export default function App() {
       if (!noPixelateChecked) {
         pixelateImage(canvas, newBlockSize)
       }
-      console.log('Pixelation done')
 
       // パレット量子化
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
 
       flattenAlpha(imageData)
-      console.log('Alpha flattening done')
 
       let processedImageData: ImageData
 
@@ -201,13 +201,11 @@ export default function App() {
       } else {
         processedImageData = quantizeToNearestColor(imageData)
       }
-      console.log('Color quantization done')
 
       ctx.putImageData(processedImageData, 0, 0)
 
       // 処理済みキャンバスを保存
       setProcessedCanvas(canvas)
-      console.log('Processing complete')
 
       // プレビュー表示
       setZoomLevel(1)
