@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react"
 import { adjustImageSize, pixelateImage, flattenAlpha, floydSteinbergDither, quantizeToNearestColor, rgbToHex } from "@/lib/functions"
 import { COLOR_NAME_MAP } from "@/lib/palette"
+import imageLogo from "@/asset/image.svg"
 
 function ImagePreview({
   processedCanvas,
@@ -361,8 +362,10 @@ export default function App() {
     <>
       <div className="setting">
         <label htmlFor="imageInput" className="upload-area">
-          <div className="upload-icon">📸</div>
-          <p>画像をドラッグ＆ドロップするか、クリックして選択してください</p>
+          <div className="upload-icon">
+            <img src={imageLogo} alt="image logo" />
+          </div>
+          <p>クリックして画像を選択してください</p>
           <input
             type="file"
             id="imageInput"
@@ -384,7 +387,6 @@ export default function App() {
             />
           </div>
           <div className="control-group">
-            <label>オプション</label>
             <div className="checkbox-group">
               <input
                 type="checkbox"
