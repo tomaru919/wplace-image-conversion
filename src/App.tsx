@@ -2,19 +2,16 @@ import { useState, useRef, useEffect, useCallback } from "react"
 import { adjustImageSize, pixelateImage, flattenAlpha, floydSteinbergDither, quantizeToNearestColor, rgbToHex } from "@/lib/functions"
 import { COLOR_NAME_MAP } from "@/lib/palette"
 
-export default function App() {
-  const [blockSize, setBlockSize] = useState(4),
-    [ditherChecked, setDitherChecked] = useState(false),
-    [noPixelateChecked, setNoPixelateChecked] = useState(false),
-    [currentImage, setImageFile] = useState<HTMLImageElement | null>(null),
-    [processing, setProcessing] = useState(false),
-    [processedCanvas, setProcessedCanvas] = useState<HTMLCanvasElement | null>(null),
-    [showPreview, setShowPreview] = useState(false),
-    [zoomLevel, setZoomLevel] = useState(1),
+function ImagePreview({
+  processedCanvas,
+  currentBlockSize,
+}: {
+  processedCanvas: HTMLCanvasElement
+  currentBlockSize: number
+}) {
+  const [zoomLevel, setZoomLevel] = useState(1),
     [colorInfo, setColorInfo] = useState({ show: false, x: 0, y: 0, text: '' }),
-    [currentBlockSize, setCurrentBlockSize] = useState(0)
-
-  const [isDragging, setIsDragging] = useState(false),
+    [isDragging, setIsDragging] = useState(false),
     [dragStart, setDragStart] = useState({ x: 0, y: 0 }),
     [canvasPosition, setCanvasPosition] = useState({ x: 0, y: 0 }),
     [initialPosition, setInitialPosition] = useState({ x: 0, y: 0 })
@@ -97,24 +94,6 @@ export default function App() {
     return { color: rgbToHex(r, g, b), originalX, originalY }
   }
 
-  /** 画像ファイル選択時の処理 */
-  function handleFileSelect(file: File) {
-    if (!file.type.startsWith("image/")) {
-      alert("画像ファイルを選択してください")
-      return
-    }
-
-    const reader = new FileReader()
-    reader.onload = e => {
-      const img = new Image()
-      img.onload = () => {
-        setImageFile(img)
-      }
-      img.src = e.target?.result as string
-    }
-    reader.readAsDataURL(file)
-  }
-
   /** ズームレベル変更時の処理 */
   function handleZoomChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const newZoomLevel = parseFloat(e.target.value)
@@ -150,68 +129,6 @@ export default function App() {
       setCanvasPosition({ x: newX, y: newY })
       setInitialPosition({ x: newX, y: newY })
     }
-  }
-
-  /** 画像処理のメイン関数 */
-  async function processImage() {
-    if (!currentImage) return
-
-    // 移動位置リセット
-    setCanvasPosition({ x: 0, y: 0 })
-    setInitialPosition({ x: 0, y: 0 })
-
-    setProcessing(true)
-
-    setTimeout(() => {
-      const canvas = document.createElement("canvas")
-      const ctx = canvas.getContext("2d")
-      if (!ctx) return
-
-      const newBlockSize = ditherChecked || noPixelateChecked ? 1 : blockSize
-      setCurrentBlockSize(newBlockSize)
-
-      // 画像サイズをブロックサイズで割り切れるように調整
-      const originalWidth = currentImage.naturalWidth
-      const originalHeight = currentImage.naturalHeight
-      const adjustedSize = adjustImageSize(originalWidth, originalHeight, newBlockSize)
-
-      canvas.width = adjustedSize.width
-      canvas.height = adjustedSize.height
-
-      // 調整されたサイズに画像を描画（中央配置でクロップ）
-      const offsetX = (originalWidth - adjustedSize.width) / 2
-      const offsetY = (originalHeight - adjustedSize.height) / 2
-
-      ctx.drawImage(currentImage, offsetX, offsetY, adjustedSize.width, adjustedSize.height, 0, 0, adjustedSize.width, adjustedSize.height)
-
-      // ピクセル化（オプション）
-      if (!noPixelateChecked) {
-        pixelateImage(canvas, newBlockSize)
-      }
-
-      // パレット量子化
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-
-      flattenAlpha(imageData)
-
-      let processedImageData: ImageData
-
-      if (ditherChecked) {
-        processedImageData = floydSteinbergDither(imageData)
-      } else {
-        processedImageData = quantizeToNearestColor(imageData)
-      }
-
-      ctx.putImageData(processedImageData, 0, 0)
-
-      // 処理済みキャンバスを保存
-      setProcessedCanvas(canvas)
-
-      // プレビュー表示
-      setZoomLevel(1)
-      setShowPreview(true)
-      setProcessing(false)
-    }, 100)
   }
 
   function handleMouseMove(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
@@ -299,6 +216,147 @@ export default function App() {
     drawCanvas()
   }, [drawCanvas])
 
+  // 移動位置とズームの初期化
+  useEffect(() => {
+    setZoomLevel(1)
+    setCanvasPosition({ x: 0, y: 0 })
+    setInitialPosition({ x: 0, y: 0 })
+  }, [processedCanvas])
+
+  return (
+    <div className="preview-area">
+      <div className="preview-container">
+        <h4>処理後画像 <span>({processedCanvas.width / currentBlockSize}x{processedCanvas.height / currentBlockSize})</span></h4>
+        <div className="zoom-controls">
+          <label htmlFor="zoomSelect">ズーム:</label>
+          <select
+            id="zoomSelect"
+            value={zoomLevel}
+            onChange={handleZoomChange}
+          >
+            <option value="0.5">50%</option>
+            <option value="1">100%</option>
+            <option value="2">200%</option>
+            <option value="4">400%</option>
+            <option value="8">800%</option>
+            <option value="10">1000%</option>
+          </select>
+        </div>
+        <div className="canvas-container" ref={containerRef}>
+          <canvas
+            className="pixel-canvas"
+            ref={canvasRef}
+            style={{
+              cursor: isDragging ? "grabbing" : "crosshair",
+              transform: `translate(${canvasPosition.x}px, ${canvasPosition.y}px)`
+            }}
+            onMouseMove={handleMouseMove}
+            onMouseDown={handleMouseDown}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseLeave}
+          ></canvas>
+        </div>
+        {(!isDragging && colorInfo.show) && (
+          <div
+            className="color-info"
+            style={{
+              display: "block",
+              left: colorInfo.x + 5,
+              top: colorInfo.y + 5
+            }}
+          >{colorInfo.text}</div>
+        )}
+        <button className="download-btn" onClick={downloadImage}>PNG ダウンロード</button>
+      </div>
+    </div>
+  )
+}
+
+export default function App() {
+  const [blockSize, setBlockSize] = useState(4),
+    [ditherChecked, setDitherChecked] = useState(false),
+    [noPixelateChecked, setNoPixelateChecked] = useState(false),
+    [currentImage, setImageFile] = useState<HTMLImageElement | null>(null),
+    [processing, setProcessing] = useState(false),
+    [processedCanvas, setProcessedCanvas] = useState<HTMLCanvasElement | null>(null),
+    [showPreview, setShowPreview] = useState(false)
+
+  const currentBlockSize = useRef(0)
+
+  /** 画像ファイル選択時の処理 */
+  function handleFileSelect(file: File) {
+    if (!file.type.startsWith("image/")) {
+      alert("画像ファイルを選択してください")
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = e => {
+      const img = new Image()
+      img.onload = () => {
+        setImageFile(img)
+      }
+      img.src = e.target?.result as string
+    }
+    reader.readAsDataURL(file)
+  }
+
+  /** 画像処理のメイン関数 */
+  async function processImage() {
+    if (!currentImage) return
+
+    setProcessing(true)
+
+    setTimeout(() => {
+      const canvas = document.createElement("canvas")
+      const ctx = canvas.getContext("2d")
+      if (!ctx) return
+
+      currentBlockSize.current = ditherChecked || noPixelateChecked ? 1 : blockSize
+
+      // 画像サイズをブロックサイズで割り切れるように調整
+      const originalWidth = currentImage.naturalWidth
+      const originalHeight = currentImage.naturalHeight
+      const adjustedSize = adjustImageSize(originalWidth, originalHeight, currentBlockSize.current)
+
+      canvas.width = adjustedSize.width
+      canvas.height = adjustedSize.height
+
+      // 調整されたサイズに画像を描画（中央配置でクロップ）
+      const offsetX = (originalWidth - adjustedSize.width) / 2
+      const offsetY = (originalHeight - adjustedSize.height) / 2
+
+      ctx.drawImage(currentImage, offsetX, offsetY, adjustedSize.width, adjustedSize.height, 0, 0, adjustedSize.width, adjustedSize.height)
+
+      // ピクセル化（オプション）
+      if (!noPixelateChecked) {
+        pixelateImage(canvas, currentBlockSize.current)
+      }
+
+      // パレット量子化
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+
+      flattenAlpha(imageData)
+
+      let processedImageData: ImageData
+
+      if (ditherChecked) {
+        processedImageData = floydSteinbergDither(imageData)
+      } else {
+        processedImageData = quantizeToNearestColor(imageData)
+      }
+
+      ctx.putImageData(processedImageData, 0, 0)
+
+      // 処理済みキャンバスを保存
+      setProcessedCanvas(canvas)
+
+      // プレビュー表示
+      setShowPreview(true)
+      setProcessing(false)
+    }, 100)
+  }
+
   return (
     <>
       <div className="setting">
@@ -363,51 +421,10 @@ export default function App() {
       )}
 
       {(showPreview && processedCanvas) && (
-        <div className="preview-area">
-          <div className="preview-container">
-            <h4>処理後画像 <span>({processedCanvas.width / currentBlockSize}x{processedCanvas.height / currentBlockSize})</span></h4>
-            <div className="zoom-controls">
-              <label htmlFor="zoomSelect">ズーム:</label>
-              <select
-                id="zoomSelect"
-                value={zoomLevel}
-                onChange={handleZoomChange}
-              >
-                <option value="0.5">50%</option>
-                <option value="1">100%</option>
-                <option value="2">200%</option>
-                <option value="4">400%</option>
-                <option value="8">800%</option>
-                <option value="10">1000%</option>
-              </select>
-            </div>
-            <div className="canvas-container" ref={containerRef}>
-              <canvas
-                className="pixel-canvas"
-                ref={canvasRef}
-                style={{
-                  cursor: isDragging ? "grabbing" : "crosshair",
-                  transform: `translate(${canvasPosition.x}px, ${canvasPosition.y}px)`
-                }}
-                onMouseMove={handleMouseMove}
-                onMouseDown={handleMouseDown}
-                onMouseUp={handleMouseUp}
-                onMouseLeave={handleMouseLeave}
-              ></canvas>
-            </div>
-            {!isDragging && (
-              <div
-                className="color-info"
-                style={{
-                  display: "block",
-                  left: colorInfo.x + "px",
-                  top: colorInfo.y + "px"
-                }}
-              >{colorInfo.text}</div>
-            )}
-            <button className="download-btn" onClick={downloadImage}>PNG ダウンロード</button>
-          </div>
-        </div>
+        <ImagePreview
+          processedCanvas={processedCanvas}
+          currentBlockSize={currentBlockSize.current}
+        />
       )}
     </>
   )
