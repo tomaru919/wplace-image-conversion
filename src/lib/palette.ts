@@ -1,4 +1,5 @@
-const PALETTE = [
+export const PALETTE = [
+    // default
     { hex: '#000000', name: 'Black' },
     { hex: '#3c3c3c', name: 'Dark Gray' },
     { hex: '#787878', name: 'Gray' },
@@ -30,6 +31,8 @@ const PALETTE = [
     { hex: '#684634', name: 'Dark Brown' },
     { hex: '#95682a', name: 'Brown' },
     { hex: '#f8b277', name: 'Beige' },
+
+    // option
     { hex: '#aaaaaa', name: 'Medium Gray' },
     { hex: '#a50e1e', name: 'Dark Red' },
     { hex: '#fa8072', name: 'Light Red' },
@@ -61,5 +64,8 @@ const PALETTE = [
     { hex: '#b3b9d1', name: 'Light Slate' }
 ]
 
-export const PALETTE_HEX = PALETTE.map(c => c.hex)
+// パレットを分割
+export const DEFAULT_COLORS = PALETTE.slice(0, 31)
+export const SELECTABLE_COLORS = PALETTE.slice(31)
+
 export const COLOR_NAME_MAP = Object.fromEntries(PALETTE.map(c => [c.hex, c.name]))

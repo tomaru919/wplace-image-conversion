@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react"
 import { adjustImageSize, pixelateImage, flattenAlpha, floydSteinbergDither, quantizeToNearestColor, rgbToHex } from "@/lib/functions"
-import { COLOR_NAME_MAP } from "@/lib/palette"
-import imageLogo from "@/asset/image.svg"
+import { COLOR_NAME_MAP, DEFAULT_COLORS, SELECTABLE_COLORS } from "@/lib/palette"
 
 function ImagePreview({
   processedCanvas,
@@ -273,6 +272,44 @@ function ImagePreview({
   )
 }
 
+function SelectColors({
+  selectedColors,
+  setSelectedColors
+}: {
+  selectedColors: { [key: string]: boolean }
+  setSelectedColors: React.Dispatch<React.SetStateAction<{ [key: string]: boolean }>>
+}) {
+  /** カラー選択のハンドラ */
+  function handleColorSelectionChange(colorName: string) {
+    setSelectedColors(prev => ({
+      ...prev,
+      [colorName]: !prev[colorName]
+    }))
+  }
+
+  return (
+    <div className="color-settings-container">
+      <div className="control-group color-selection">
+        <label>追加カラーパレット:</label>
+        <div className="color-checkboxes">
+          {SELECTABLE_COLORS.map(color => (
+            <div className="checkbox-group" key={color.name}>
+              <input
+                type="checkbox"
+                id={`color-${color.name}`}
+                checked={selectedColors[color.name]}
+                onChange={() => handleColorSelectionChange(color.name)}
+              />
+              <span className="color-swatch" style={{ backgroundColor: color.hex }}></span>
+              <label htmlFor={`color-${color.name}`}>{color.name}</label>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function App() {
   const [blockSize, setBlockSize] = useState(4),
     [ditherChecked, setDitherChecked] = useState(false),
@@ -280,7 +317,14 @@ export default function App() {
     [currentImage, setImageFile] = useState<HTMLImageElement | null>(null),
     [processing, setProcessing] = useState(false),
     [processedCanvas, setProcessedCanvas] = useState<HTMLCanvasElement | null>(null),
-    [showPreview, setShowPreview] = useState(false)
+    [showPreview, setShowPreview] = useState(false),
+    [selectedColors, setSelectedColors] = useState(() => {
+      const initialState: { [key: string]: boolean } = {}
+      SELECTABLE_COLORS.forEach(color => {
+        initialState[color.name] = true
+      })
+      return initialState
+    })
 
   const currentBlockSize = useRef(0)
 
@@ -302,6 +346,14 @@ export default function App() {
     reader.readAsDataURL(file)
   }
 
+  // /** カラー選択のハンドラ */
+  // function handleColorSelectionChange(colorName: string) {
+  //   setSelectedColors(prev => ({
+  //     ...prev,
+  //     [colorName]: !prev[colorName]
+  //   }))
+  // }
+
   /** 画像処理のメイン関数 */
   async function processImage() {
     if (!currentImage) return
@@ -309,6 +361,22 @@ export default function App() {
     setProcessing(true)
 
     setTimeout(() => {
+      // 最終的なパレットを作成
+      const finalPalette = [...DEFAULT_COLORS]
+      SELECTABLE_COLORS.forEach(color => {
+        if (selectedColors[color.name]) {
+          finalPalette.push(color)
+        }
+      })
+
+      // HEX to RGB
+      const finalPaletteRGB = finalPalette.map(c => {
+        const r = parseInt(c.hex.slice(1, 3), 16)
+        const g = parseInt(c.hex.slice(3, 5), 16)
+        const b = parseInt(c.hex.slice(5, 7), 16)
+        return [r, g, b]
+      })
+
       const canvas = document.createElement("canvas")
       const ctx = canvas.getContext("2d")
       if (!ctx) return
@@ -342,9 +410,9 @@ export default function App() {
       let processedImageData: ImageData
 
       if (ditherChecked) {
-        processedImageData = floydSteinbergDither(imageData)
+        processedImageData = floydSteinbergDither(imageData, finalPaletteRGB)
       } else {
-        processedImageData = quantizeToNearestColor(imageData)
+        processedImageData = quantizeToNearestColor(imageData, finalPaletteRGB)
       }
 
       ctx.putImageData(processedImageData, 0, 0)
@@ -363,7 +431,9 @@ export default function App() {
       <div className="setting">
         <label htmlFor="imageInput" className="upload-area">
           <div className="upload-icon">
-            <img src={imageLogo} alt="image logo" />
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="96" height="96" shape-rendering="crispEdges">
+              <path fill="#fff" d="M4 3h16v1H4zm-1 1h18v1H3zm-1 1h2v15H2zm18 0h2v15h-2zM3 20h18v1H3zm1 1h16v1H4zM8 7h2v1H8zM7 8h4v1H7zM6 9h2v2H6zm4 0h2v2h-2zM7 11h4v1H7zm1 1h2v1H8zm7-2h2v1h-2zm-1 1h4v1h-4zm-1 1h6v1h-6zm-1 1h3v1h-3zm5 0h3v1h-3zm-6 1h3v1h-3zm7 0h2v1h-2zm-8 1h3v1h-3zm9 0h1v1h-1zm-10 1h3v1H9zm-1 1h3v1H8zm-1 1h3v1H7zm-1 1h3v1H6z" />
+            </svg>
           </div>
           <p>クリックして画像を選択してください</p>
           <input
@@ -380,7 +450,7 @@ export default function App() {
             <label htmlFor="blockSize">ピクセルブロックサイズ: {blockSize}</label>
             <input
               type="range"
-              min="1"
+              min="2"
               max="12"
               value={blockSize}
               onChange={(e) => setBlockSize(parseInt(e.target.value))}
@@ -408,6 +478,35 @@ export default function App() {
           </div>
         </div>
       </div>
+
+      {currentImage && (
+        <div className="original-image-container">
+          <h3>オリジナル画像</h3>
+          <img src={currentImage.src} alt="Original Upload" />
+        </div>
+      )}
+
+      {/* <div className="color-settings-container">
+        <div className="control-group color-selection">
+          <label>追加カラーパレット:</label>
+          <div className="color-checkboxes">
+            {SELECTABLE_COLORS.map(color => (
+              <div className="checkbox-group" key={color.name}>
+                <input
+                  type="checkbox"
+                  id={`color-${color.name}`}
+                  checked={selectedColors[color.name]}
+                  onChange={() => handleColorSelectionChange(color.name)}
+                />
+                <span className="color-swatch" style={{ backgroundColor: color.hex }}></span>
+                <label htmlFor={`color-${color.name}`}>{color.name}</label>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div> */}
+
+      <SelectColors selectedColors={selectedColors} setSelectedColors={setSelectedColors} />
 
       <button
         className="process-btn"

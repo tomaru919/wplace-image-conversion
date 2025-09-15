@@ -1,5 +1,3 @@
-import { PALETTE_HEX } from "@/lib/palette"
-
 /** 画像サイズをブロックサイズで割り切れるように調整 */
 export function adjustImageSize(originalWidth: number, originalHeight: number, blockSize: number) {
     const adjustedWidth = Math.floor(originalWidth / blockSize) * blockSize
@@ -63,16 +61,8 @@ export function flattenAlpha(imageData: ImageData) {
     }
 }
 
-// PALETTE_HEXをRGB配列に変換
-const palette = PALETTE_HEX.map(hex => {
-    const r = parseInt(hex.slice(1, 3), 16)
-    const g = parseInt(hex.slice(3, 5), 16)
-    const b = parseInt(hex.slice(5, 7), 16)
-    return [r, g, b]
-})
-
 /** 最近傍パレット色を見つける */
-function findNearestPaletteColor(r: number, g: number, b: number) {
+function findNearestPaletteColor(r: number, g: number, b: number, palette: number[][]) {
     let minDistance = Infinity
     let nearestColor = palette[0]
 
@@ -89,7 +79,7 @@ function findNearestPaletteColor(r: number, g: number, b: number) {
 }
 
 /** Floyd-Steinbergディザリング */
-export function floydSteinbergDither(imageData: ImageData) {
+export function floydSteinbergDither(imageData: ImageData, palette: number[][]) {
     const data = new Uint8ClampedArray(imageData.data)
     const width = imageData.width
     const height = imageData.height
@@ -101,7 +91,7 @@ export function floydSteinbergDither(imageData: ImageData) {
             const oldG = data[idx + 1]
             const oldB = data[idx + 2]
 
-            const [newR, newG, newB] = findNearestPaletteColor(oldR, oldG, oldB)
+            const [newR, newG, newB] = findNearestPaletteColor(oldR, oldG, oldB, palette)
 
             data[idx] = newR
             data[idx + 1] = newG
@@ -146,11 +136,11 @@ export function floydSteinbergDither(imageData: ImageData) {
 }
 
 /** 最近傍量子化 */
-export function quantizeToNearestColor(imageData: ImageData) {
+export function quantizeToNearestColor(imageData: ImageData, palette: number[][]) {
     const data = imageData.data
 
     for (let i = 0; i < data.length; i += 4) {
-        const [r, g, b] = findNearestPaletteColor(data[i], data[i + 1], data[i + 2])
+        const [r, g, b] = findNearestPaletteColor(data[i], data[i + 1], data[i + 2], palette)
         data[i] = r
         data[i + 1] = g
         data[i + 2] = b
