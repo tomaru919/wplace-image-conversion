@@ -132,43 +132,44 @@ function ImagePreview({
   }
 
   function handleMouseMove(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
-    if (isDragging && canvasRef.current && containerRef.current) {
-      e.preventDefault()
-
-      const container = containerRef.current
-      const canvasWidth = canvasRef.current.width
-      const canvasHeight = canvasRef.current.height
-      const containerWidth = container.clientWidth
-      const containerHeight = container.clientHeight
-
-      let newX = e.clientX - dragStart.x
-      let newY = e.clientY - dragStart.y
-
-      if (canvasWidth > containerWidth) {
-        const minX = containerWidth - canvasWidth
-        newX = Math.max(minX, Math.min(newX, 0))
-      } else {
-        newX = 0
+    if (canvasRef.current) {
+      if (isDragging && containerRef.current) {
+        e.preventDefault()
+  
+        const container = containerRef.current
+        const canvasWidth = canvasRef.current.width
+        const canvasHeight = canvasRef.current.height
+        const containerWidth = container.clientWidth
+        const containerHeight = container.clientHeight
+  
+        let newX = e.clientX - dragStart.x
+        let newY = e.clientY - dragStart.y
+  
+        if (canvasWidth > containerWidth) {
+          const minX = containerWidth - canvasWidth
+          newX = Math.max(minX, Math.min(newX, 0))
+        } else {
+          newX = 0
+        }
+  
+        if (canvasHeight > containerHeight) {
+          const minY = containerHeight - canvasHeight
+          newY = Math.max(minY, Math.min(newY, 0))
+        } else {
+          newY = 0
+        }
+        setCanvasPosition({ x: newX, y: newY })
       }
 
-      if (canvasHeight > containerHeight) {
-        const minY = containerHeight - canvasHeight
-        newY = Math.max(minY, Math.min(newY, 0))
-      } else {
-        newY = 0
-      }
-
-      setCanvasPosition({ x: newX, y: newY })
-    } else if (canvasRef.current) {
       const rect = canvasRef.current.getBoundingClientRect()
       const x = e.clientX - rect.left
       const y = e.clientY - rect.top
-
+  
       const pixelInfo = getPixelColor(x, y)
       if (pixelInfo) {
         const colorName = COLOR_NAME_MAP[pixelInfo.color.toLowerCase()] || 'Unknown Color'
         setColorInfo({
-          show: true,
+          show: !isDragging,
           x: e.pageX,
           y: e.pageY,
           text: `(${Math.floor(pixelInfo.originalX / currentBlockSize)}, ${Math.floor(pixelInfo.originalY / currentBlockSize)})\n${colorName}\n${pixelInfo.color}`
@@ -192,6 +193,14 @@ function ImagePreview({
     if (isDragging) {
       setIsDragging(false)
       setInitialPosition(canvasPosition)
+
+      //showの値のみを変更して他は元々の値を使う color-info要素の表示
+      setColorInfo(prev => ({
+        show: true,
+        x: prev["x"],
+        y: prev["y"],
+        text: prev["text"]
+      }))
     }
   }
 
