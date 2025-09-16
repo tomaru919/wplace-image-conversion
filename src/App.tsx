@@ -70,7 +70,7 @@ function ImagePreview({
       drawGrid(ctx, displayWidth, displayHeight, currentBlockSize)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [processedCanvas, zoomLevel, currentBlockSize])
+  }, [processedCanvas, zoomLevel])
 
   /** カラー情報取得 */
   function getPixelColor(x: number, y: number) {
@@ -346,14 +346,6 @@ export default function App() {
     reader.readAsDataURL(file)
   }
 
-  // /** カラー選択のハンドラ */
-  // function handleColorSelectionChange(colorName: string) {
-  //   setSelectedColors(prev => ({
-  //     ...prev,
-  //     [colorName]: !prev[colorName]
-  //   }))
-  // }
-
   /** 画像処理のメイン関数 */
   async function processImage() {
     if (!currentImage) return
@@ -485,26 +477,6 @@ export default function App() {
           <img src={currentImage.src} alt="Original Upload" />
         </div>
       )}
-
-      {/* <div className="color-settings-container">
-        <div className="control-group color-selection">
-          <label>追加カラーパレット:</label>
-          <div className="color-checkboxes">
-            {SELECTABLE_COLORS.map(color => (
-              <div className="checkbox-group" key={color.name}>
-                <input
-                  type="checkbox"
-                  id={`color-${color.name}`}
-                  checked={selectedColors[color.name]}
-                  onChange={() => handleColorSelectionChange(color.name)}
-                />
-                <span className="color-swatch" style={{ backgroundColor: color.hex }}></span>
-                <label htmlFor={`color-${color.name}`}>{color.name}</label>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div> */}
 
       <SelectColors selectedColors={selectedColors} setSelectedColors={setSelectedColors} />
 
