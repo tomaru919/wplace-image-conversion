@@ -287,10 +287,36 @@ function SelectColors({
     }))
   }
 
+  function selectAllColor() {
+    setSelectedColors(prev => {
+      const state: { [key: string]: boolean } = {}
+      for (const color of Object.keys(prev)) {
+        state[color] = true
+      }
+      return state
+    })
+  }
+
+  function deselectAllColors() {
+    setSelectedColors(prev => {
+      const state: { [key: string]: boolean } = {}
+      for (const color of Object.keys(prev)) {
+        state[color] = false
+      }
+      return state
+    })
+  }
+
   return (
     <div className="color-settings-container">
       <div className="control-group color-selection">
-        <label>追加カラーパレット:</label>
+        <div className="color-selection-header">
+          <label>追加カラーパレット:</label>
+          <div className="color-selection-controls">
+            <button onClick={selectAllColor}>すべて選択</button>
+            <button onClick={deselectAllColors}>すべて解除</button>
+          </div>
+        </div>
         <div className="color-checkboxes">
           {SELECTABLE_COLORS.map(color => (
             <div className="checkbox-group" key={color.name}>
