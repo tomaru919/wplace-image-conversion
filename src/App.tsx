@@ -212,6 +212,56 @@ function ImagePreview({
     setColorInfo({ show: false, x: 0, y: 0, text: '' })
   }
 
+  function handleTouchStart(e: React.TouchEvent<HTMLCanvasElement>) {
+    e.preventDefault()
+    setIsDragging(true)
+    const touch = e.touches[0]
+    setDragStart({
+      x: touch.clientX - initialPosition.x,
+      y: touch.clientY - initialPosition.y
+    })
+  }
+
+  function handleTouchMove(e: React.TouchEvent<HTMLCanvasElement>) {
+    if (canvasRef.current) {
+      if (isDragging && containerRef.current) {
+        e.preventDefault()
+        const touch = e.touches[0]
+  
+        const container = containerRef.current
+        const canvasWidth = canvasRef.current.width
+        const canvasHeight = canvasRef.current.height
+        const containerWidth = container.clientWidth
+        const containerHeight = container.clientHeight
+  
+        let newX = touch.clientX - dragStart.x
+        let newY = touch.clientY - dragStart.y
+  
+        if (canvasWidth > containerWidth) {
+          const minX = containerWidth - canvasWidth
+          newX = Math.max(minX, Math.min(newX, 0))
+        } else {
+          newX = 0
+        }
+  
+        if (canvasHeight > containerHeight) {
+          const minY = containerHeight - canvasHeight
+          newY = Math.max(minY, Math.min(newY, 0))
+        } else {
+          newY = 0
+        }
+        setCanvasPosition({ x: newX, y: newY })
+      }
+    }
+  }
+
+  function handleTouchEnd() {
+    if (isDragging) {
+      setIsDragging(false)
+      setInitialPosition(canvasPosition)
+    }
+  }
+
   function downloadImage() {
     if (processedCanvas) {
       const link = document.createElement('a')
@@ -263,6 +313,9 @@ function ImagePreview({
             onMouseDown={handleMouseDown}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseLeave}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
           ></canvas>
         </div>
         {(!isDragging && colorInfo.show) && (
