@@ -34,6 +34,11 @@ h1 {
     background-color: #444;
     box-shadow: inset 0 0 0 4px #444, inset 0 0 0 8px #000;
     margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 250px;
 }
 
 .upload-area:hover {
@@ -42,6 +47,16 @@ h1 {
 
 .upload-icon {
     margin-bottom: 15px;
+}
+
+.upload-preview-image {
+    display: block;
+    margin-bottom: 15px;
+    width: 98px;
+    height: 98px;
+    max-width: 98px;
+    max-height: 98px;
+    object-fit: contain;
 }
 
 .controls {
@@ -177,26 +192,7 @@ input[type="checkbox"]:checked::before {
     box-shadow: 8px 8px 0 #000;
 }
 
-.original-image-container {
-    background: #222;
-    border: 4px solid #000;
-    box-shadow: 8px 8px 0 #000;
-    padding: 20px;
-    margin-bottom: 15px;
-}
 
-.original-image-container h3 {
-    margin-bottom: 15px;
-    font-size: 1.2rem;
-}
-
-.original-image-container img {
-    max-width: 100%;
-    max-height: 400px;
-    display: block;
-    margin: 0 auto;
-    border: 4px solid #000;
-}
 
 .preview-area {
     display: grid;
@@ -239,9 +235,13 @@ input[type="checkbox"]:checked::before {
 select {
     font-family: 'DotGothic16', sans-serif;
     background-color: #fff;
-    border: 2px solid #000;
-    padding: 5px;
+    border: 4px solid #000;
+    border-radius: 0%;
+    padding: 10px;
     font-size: 1rem;
+    box-shadow: 4px 4px 0 #000;
+    width: 100px;
+    color: #000;
 }
 
 .color-info {

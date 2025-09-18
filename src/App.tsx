@@ -135,23 +135,23 @@ function ImagePreview({
     if (canvasRef.current) {
       if (isDragging && containerRef.current) {
         e.preventDefault()
-  
+
         const container = containerRef.current
         const canvasWidth = canvasRef.current.width
         const canvasHeight = canvasRef.current.height
         const containerWidth = container.clientWidth
         const containerHeight = container.clientHeight
-  
+
         let newX = e.clientX - dragStart.x
         let newY = e.clientY - dragStart.y
-  
+
         if (canvasWidth > containerWidth) {
           const minX = containerWidth - canvasWidth
           newX = Math.max(minX, Math.min(newX, 0))
         } else {
           newX = 0
         }
-  
+
         if (canvasHeight > containerHeight) {
           const minY = containerHeight - canvasHeight
           newY = Math.max(minY, Math.min(newY, 0))
@@ -164,7 +164,7 @@ function ImagePreview({
       const rect = canvasRef.current.getBoundingClientRect()
       const x = e.clientX - rect.left
       const y = e.clientY - rect.top
-  
+
       const pixelInfo = getPixelColor(x, y)
       if (pixelInfo) {
         const colorName = COLOR_NAME_MAP[pixelInfo.color.toLowerCase()] || 'Unknown Color'
@@ -227,23 +227,23 @@ function ImagePreview({
       if (isDragging && containerRef.current) {
         e.preventDefault()
         const touch = e.touches[0]
-  
+
         const container = containerRef.current
         const canvasWidth = canvasRef.current.width
         const canvasHeight = canvasRef.current.height
         const containerWidth = container.clientWidth
         const containerHeight = container.clientHeight
-  
+
         let newX = touch.clientX - dragStart.x
         let newY = touch.clientY - dragStart.y
-  
+
         if (canvasWidth > containerWidth) {
           const minX = containerWidth - canvasWidth
           newX = Math.max(minX, Math.min(newX, 0))
         } else {
           newX = 0
         }
-  
+
         if (canvasHeight > containerHeight) {
           const minY = containerHeight - canvasHeight
           newY = Math.max(minY, Math.min(newY, 0))
@@ -510,11 +510,15 @@ export default function App() {
     <>
       <div className="setting">
         <label htmlFor="imageInput" className="upload-area">
-          <div className="upload-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="96" height="96" shape-rendering="crispEdges">
-              <path fill="#fff" d="M4 3h16v1H4zm-1 1h18v1H3zm-1 1h2v15H2zm18 0h2v15h-2zM3 20h18v1H3zm1 1h16v1H4zM8 7h2v1H8zM7 8h4v1H7zM6 9h2v2H6zm4 0h2v2h-2zM7 11h4v1H7zm1 1h2v1H8zm7-2h2v1h-2zm-1 1h4v1h-4zm-1 1h6v1h-6zm-1 1h3v1h-3zm5 0h3v1h-3zm-6 1h3v1h-3zm7 0h2v1h-2zm-8 1h3v1h-3zm9 0h1v1h-1zm-10 1h3v1H9zm-1 1h3v1H8zm-1 1h3v1H7zm-1 1h3v1H6z" />
-            </svg>
-          </div>
+          {currentImage ? (
+            <img src={currentImage.src} alt="Upload preview" className="upload-preview-image" />
+          ) : (
+            <div className="upload-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="96" height="96" shape-rendering="crispEdges">
+                <path fill="#fff" d="M4 3h16v1H4zm-1 1h18v1H3zm-1 1h2v15H2zm18 0h2v15h-2zM3 20h18v1H3zm1 1h16v1H4zM8 7h2v1H8zM7 8h4v1H7zM6 9h2v2H6zm4 0h2v2h-2zM7 11h4v1H7zm1 1h2v1H8zm7-2h2v1h-2zm-1 1h4v1h-4zm-1 1h6v1h-6zm-1 1h3v1h-3zm5 0h3v1h-3zm-6 1h3v1h-3zm7 0h2v1h-2zm-8 1h3v1h-3zm9 0h1v1h-1zm-10 1h3v1H9zm-1 1h3v1H8zm-1 1h3v1H7zm-1 1h3v1H6z" />
+              </svg>
+            </div>
+          )}
           <p>クリックして画像を選択してください</p>
           <input
             type="file"
@@ -559,12 +563,7 @@ export default function App() {
         </div>
       </div>
 
-      {currentImage && (
-        <div className="original-image-container">
-          <h3>オリジナル画像</h3>
-          <img src={currentImage.src} alt="Original Upload" />
-        </div>
-      )}
+
 
       <SelectColors selectedColors={selectedColors} setSelectedColors={setSelectedColors} />
 
