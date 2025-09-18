@@ -275,11 +275,25 @@ function ImagePreview({
     drawCanvas()
   }, [drawCanvas])
 
-  // 移動位置とズームの初期化
+  // 移動位置とズームの初期化と中央揃え
   useEffect(() => {
     setZoomLevel(1)
-    setCanvasPosition({ x: 0, y: 0 })
-    setInitialPosition({ x: 0, y: 0 })
+    if (processedCanvas && containerRef.current) {
+      const container = containerRef.current
+      const canvasWidth = processedCanvas.width // zoom is 1
+      const canvasHeight = processedCanvas.height // zoom is 1
+      const containerWidth = container.clientWidth
+      const containerHeight = container.clientHeight
+
+      const x = canvasWidth < containerWidth ? (containerWidth - canvasWidth) / 2 : 0
+      const y = canvasHeight < containerHeight ? (containerHeight - canvasHeight) / 2 : 0
+
+      setCanvasPosition({ x, y })
+      setInitialPosition({ x, y })
+    } else {
+      setCanvasPosition({ x: 0, y: 0 })
+      setInitialPosition({ x: 0, y: 0 })
+    }
   }, [processedCanvas])
 
   return (
