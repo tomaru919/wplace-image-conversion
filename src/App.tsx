@@ -115,7 +115,7 @@ function ImagePreview({
         const minX = containerWidth - newCanvasWidth
         newX = Math.max(minX, Math.min(newX, 0))
       } else {
-        newX = 0
+        newX = (containerWidth - newCanvasWidth) / 2
       }
 
       // Y軸
@@ -123,7 +123,7 @@ function ImagePreview({
         const minY = containerHeight - newCanvasHeight
         newY = Math.max(minY, Math.min(newY, 0))
       } else {
-        newY = 0
+        newY = (containerHeight - newCanvasHeight) / 2
       }
 
       setCanvasPosition({ x: newX, y: newY })
@@ -142,21 +142,21 @@ function ImagePreview({
         const containerWidth = container.clientWidth
         const containerHeight = container.clientHeight
 
-        let newX = e.clientX - dragStart.x
-        let newY = e.clientY - dragStart.y
+        let newX = initialPosition.x + (e.clientX - dragStart.x)
+        let newY = initialPosition.y + (e.clientY - dragStart.y)
 
         if (canvasWidth > containerWidth) {
           const minX = containerWidth - canvasWidth
           newX = Math.max(minX, Math.min(newX, 0))
         } else {
-          newX = 0
+          newX = (containerWidth - canvasWidth) / 2
         }
 
         if (canvasHeight > containerHeight) {
           const minY = containerHeight - canvasHeight
           newY = Math.max(minY, Math.min(newY, 0))
         } else {
-          newY = 0
+          newY = (containerHeight - canvasHeight) / 2
         }
         setCanvasPosition({ x: newX, y: newY })
       }
@@ -184,8 +184,8 @@ function ImagePreview({
     e.preventDefault()
     setIsDragging(true)
     setDragStart({
-      x: e.clientX - initialPosition.x,
-      y: e.clientY - initialPosition.y
+      x: e.clientX,
+      y: e.clientY
     })
   }
 
@@ -217,8 +217,8 @@ function ImagePreview({
     setIsDragging(true)
     const touch = e.touches[0]
     setDragStart({
-      x: touch.clientX - initialPosition.x,
-      y: touch.clientY - initialPosition.y
+      x: touch.clientX,
+      y: touch.clientY
     })
   }
 
@@ -234,21 +234,21 @@ function ImagePreview({
         const containerWidth = container.clientWidth
         const containerHeight = container.clientHeight
 
-        let newX = touch.clientX - dragStart.x
-        let newY = touch.clientY - dragStart.y
+        let newX = initialPosition.x + (touch.clientX - dragStart.x)
+        let newY = initialPosition.y + (touch.clientY - dragStart.y)
 
         if (canvasWidth > containerWidth) {
           const minX = containerWidth - canvasWidth
           newX = Math.max(minX, Math.min(newX, 0))
         } else {
-          newX = 0
+          newX = (containerWidth - canvasWidth) / 2
         }
 
         if (canvasHeight > containerHeight) {
           const minY = containerHeight - canvasHeight
           newY = Math.max(minY, Math.min(newY, 0))
         } else {
-          newY = 0
+          newY = (containerHeight - canvasHeight) / 2
         }
         setCanvasPosition({ x: newX, y: newY })
       }
@@ -575,7 +575,11 @@ export default function App() {
 
       {processing && (
         <div className="processing">
-          <div className="spinner"></div>
+          <div className="loader">
+            <div className="loader-dot"></div>
+            <div className="loader-dot"></div>
+            <div className="loader-dot"></div>
+          </div>
           <p>処理中...</p>
         </div>
       )}
