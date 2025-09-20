@@ -14,7 +14,10 @@ function ImagePreview({
     [isDragging, setIsDragging] = useState(false),
     [dragStart, setDragStart] = useState({ x: 0, y: 0 }),
     [canvasPosition, setCanvasPosition] = useState({ x: 0, y: 0 }),
-    [initialPosition, setInitialPosition] = useState({ x: 0, y: 0 })
+    [initialPosition, setInitialPosition] = useState({ x: 0, y: 0 }),
+    [highlightedCell, setHighlightedCell] = useState<{ x: number, y: number } | null>(null)
+
+  const isMobile = typeof window !== 'undefined' && 'ontouchstart' in window
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -48,6 +51,23 @@ function ImagePreview({
     ctx.globalAlpha = 1
   }
 
+  /** ハイライト描画 */
+  function drawHighlight(ctx: CanvasRenderingContext2D) {
+    if (!highlightedCell || !isMobile) return
+
+    const pixelSize = currentBlockSize * zoomLevel
+    ctx.strokeStyle = '#000000'
+    ctx.lineWidth = 2
+    ctx.globalAlpha = 1
+
+    ctx.strokeRect(
+      highlightedCell.x * pixelSize + ctx.lineWidth / 2,
+      highlightedCell.y * pixelSize + ctx.lineWidth / 2,
+      pixelSize - ctx.lineWidth,
+      pixelSize - ctx.lineWidth
+    )
+  }
+
   /** キャンバスを描画 */
   const drawCanvas = useCallback(() => {
     if (!processedCanvas || !canvasRef.current) return
@@ -69,8 +89,9 @@ function ImagePreview({
     if (zoomLevel >= 2) {
       drawGrid(ctx, displayWidth, displayHeight, currentBlockSize)
     }
+    drawHighlight(ctx)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [processedCanvas, zoomLevel])
+  }, [processedCanvas, zoomLevel, highlightedCell])
 
   /** カラー情報取得 */
   function getPixelColor(x: number, y: number) {
@@ -195,12 +216,7 @@ function ImagePreview({
       setInitialPosition(canvasPosition)
 
       //showの値のみを変更して他は元々の値を使う color-info要素の表示
-      setColorInfo(prev => ({
-        show: true,
-        x: prev["x"],
-        y: prev["y"],
-        text: prev["text"]
-      }))
+      setColorInfo(prev => ({ ...prev, show: true }))
     }
   }
 
@@ -214,8 +230,19 @@ function ImagePreview({
 
   function handleTouchStart(e: React.TouchEvent<HTMLCanvasElement>) {
     e.preventDefault()
-    setIsDragging(true)
     const touch = e.touches[0]
+    if (isMobile) {
+      const rect = e.currentTarget.getBoundingClientRect()
+      const x = touch.clientX - rect.left
+      const y = touch.clientY - rect.top
+      const pixelInfo = getPixelColor(x, y)
+      if (pixelInfo) {
+        const cellX = Math.floor(pixelInfo.originalX / currentBlockSize)
+        const cellY = Math.floor(pixelInfo.originalY / currentBlockSize)
+        setHighlightedCell({ x: cellX, y: cellY })
+      }
+    }
+    setIsDragging(true)
     setDragStart({
       x: touch.clientX,
       y: touch.clientY
@@ -274,6 +301,24 @@ function ImagePreview({
   useEffect(() => {
     drawCanvas()
   }, [drawCanvas])
+
+  useEffect(() => {
+    function handleTouchOutside(event: TouchEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setHighlightedCell(null)
+      }
+    }
+
+    if (isMobile) {
+      document.addEventListener('touchstart', handleTouchOutside)
+    }
+
+    return () => {
+      if (isMobile) {
+        document.removeEventListener('touchstart', handleTouchOutside)
+      }
+    }
+  }, [isMobile])
 
   // 移動位置とズームの初期化と中央揃え
   useEffect(() => {
@@ -576,8 +621,6 @@ export default function App() {
           </div>
         </div>
       </div>
-
-
 
       <SelectColors selectedColors={selectedColors} setSelectedColors={setSelectedColors} />
 
